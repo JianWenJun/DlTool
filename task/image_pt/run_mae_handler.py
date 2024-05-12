@@ -19,8 +19,9 @@ import logging
 from typing import Optional, List
 from dataclasses import dataclass, field
 
+from core.utils.misc import set_transformers_logging
+
 import torch
-import transformers
 from datasets import load_dataset
 from transformers import HfArgumentParser, TrainingArguments, Trainer, TrainerCallback
 from transformers import ViTMAEConfig, ViTImageProcessor, ViTMAEForPreTraining
@@ -145,12 +146,6 @@ class CustomTrainingArguments(TrainingArguments):
     )
 
 
-def _set_transformers_logging(log_level: Optional[int] = logging.INFO) -> None:
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
-
-
 def get_run_args(args):
     """
         获取配置信息
@@ -182,14 +177,14 @@ def data_collate_fn(examples):
 
 
 def run_mae_pretraining(model_args: ModelArguments, data_args: DataTrainingArguments,
-                        training_args: CustomTrainingArguments, callbacks: Optional[List[TrainerCallback]] = None, ):
+                        training_args: CustomTrainingArguments, callbacks: Optional[List[TrainerCallback]] = None):
     """
         pipline运行
     :return:
     """
     # step1 设置日志信息，并打印基础信息
     if training_args.should_log:
-        _set_transformers_logging(log_level=logging.INFO)
+        set_transformers_logging(log_level=logging.INFO)
 
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}, "
@@ -197,7 +192,7 @@ def run_mae_pretraining(model_args: ModelArguments, data_args: DataTrainingArgum
     )
     logger.info(f"Training/evaluation parameters {training_args}")
     # step2 加载数据集, 先按照这个链接下载：https://zhuanlan.zhihu.com/p/685765714
-    ds = load_dataset(path = data_args.train_dir)
+    ds = load_dataset(path=data_args.train_dir)
     # step2.1 对训练数据进行切分
     # data_args.train_val_split = None if "validation" in ds.keys() else data_args.train_val_split
     # if isinstance(data_args.train_val_split, float) and data_args.train_val_split > 0.0:

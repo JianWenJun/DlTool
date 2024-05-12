@@ -12,8 +12,12 @@
 import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+
 # Automatic Weights & Biases logging enabled, to disable set 如下为true, 否则注销
 # os.environ["WANDB_DISABLED"] = "true"
+# os.environ["WANDB_WATCH"] = "false" # 具体看 WandbCallback 参数说明，梯度查看
+# os.environ["WANDB_PROJECT"] = "false" # 设置名称
 
 def do_mae_pretraining():
     """
@@ -78,6 +82,69 @@ def do_mae_pretraining():
     callbacks = []
     # step4 运行trainer
     run_mae_pretraining(model_args=model_args, data_args=data_args, training_args=trainings_args, callbacks=callbacks)
+
+
+def do_langauge_pretraining():
+    """
+        语言模型预训练
+    :return:
+    """
+    # step1 导入包
+    from task.nlp_basic_ft.run_pretraing_handler import run_language_pretraining, get_run_args
+    # step1.1 参数类别用于查询进行相应配置
+    from task.nlp_basic_ft.run_pretraing_handler import ModelArguments, DataTrainingArguments, TrainingArguments
+    # step2 参数设置
+    args = {
+        # 训练-基础参数
+        "seed": 1337,
+        "output_dir": './result/wikitext2',
+        "overwrite_output_dir": True,
+        "do_train": True,
+        "do_eval": True,
+        "num_train_epochs": 800,
+        "per_device_train_batch_size": 8,
+        "per_device_eval_batch_size": 8,
+        # "load_best_model_at_end": True,
+        # 训练-日志
+        "logging_strategy": "steps",
+        "logging_steps": 10,
+        "log_on_each_node": False,
+        "disable_tqdm": False,
+        "report_to": "wandb",
+        # 训练- 评测
+        "evaluation_strategy": "steps",  # steps, epoch
+        "eval_steps": 100,
+        "eval_delay": 1,
+        # 训练-保存
+        "save_strategy": "epoch",
+        "save_total_limit": 3,
+        "save_on_each_node": False,
+        # 训练-优化学习 - 默认adamW
+        "lr_scheduler_type": "cosine",
+        "learning_rate": 2e-5,
+        "weight_decay": 0.05,
+        "warmup_ratio": 0.05,
+        # 训练-分布式
+        "local_rank": -1,
+        "ddp_find_unused_parameters": None,  # ddp设置True
+        # 模型 -
+        "model_name_or_path": None,  # 随机初始化
+        "config_name": "/root/models/gpt2-medium",  # 不带模型文件的地址
+        "tokenizer_name": "/root/models/gpt2-medium",
+        "cache_dir": "./data/process/wikitext2",
+        # 数据 -
+        "train_dir": "/Users/jianwenjun/wikitext/wikitext-2-raw-v1",
+        # "remove_unused_columns": False,  # 自定义DataCollate为False
+        "dataloader_num_workers": 4,
+        "preprocessing_num_workers": 4
+    }
+    # step2.1 解析参数
+    model_args, data_args, trainings_args = get_run_args(args=args)
+    # step3 设置训练过程中的回调
+    callbacks = []
+    # step4 运行trainer
+    run_language_pretraining(model_args=model_args, data_args=data_args, training_args=trainings_args,
+                             callbacks=callbacks)
 
 
 if __name__ == '__main__':
