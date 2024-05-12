@@ -12,7 +12,8 @@
 import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-
+# Automatic Weights & Biases logging enabled, to disable set 如下为true, 否则注销
+# os.environ["WANDB_DISABLED"] = "true"
 
 def do_mae_pretraining():
     """
@@ -35,7 +36,7 @@ def do_mae_pretraining():
         "num_train_epochs": 800,
         "per_device_train_batch_size": 8,
         "per_device_eval_batch_size": 8,
-        "load_best_model_at_end": True,
+        # "load_best_model_at_end": True,
         # 训练-日志
         "logging_strategy": "steps",
         "logging_steps": 10,
@@ -60,12 +61,13 @@ def do_mae_pretraining():
         "ddp_find_unused_parameters": None,  # ddp设置True
         # 模型 -
         "model_name_or_path": None,  # 随机初始化
-        "config_name": "",  # 不带模型文件的地址
+        "config_name": "/root/models/vit-mae-large",  # 不带模型文件的地址
         "cache_dir": "./data/process/cifar10",
         "mask_ratio": 0.75,
         "norm_pix_loss": True,
         # 数据 -
         "label_names": ["pixel_values"],
+        "train_dir": "./data/process/cifar10",
         "remove_unused_columns": False,  # 自定义DataCollate为False
         "dataset_name": 'cifar10',
         "dataloader_num_workers": 4

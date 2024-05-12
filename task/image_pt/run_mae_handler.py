@@ -196,20 +196,15 @@ def run_mae_pretraining(model_args: ModelArguments, data_args: DataTrainingArgum
         + f"distributed training: {training_args.parallel_mode.value == 'distributed'}, 16-bits training: {training_args.fp16}"
     )
     logger.info(f"Training/evaluation parameters {training_args}")
-    # step2 加载数据集
-    ds = load_dataset(
-        data_args.dataset_name,
-        data_args.dataset_config_name,
-        data_files=data_args.data_files,
-        cache_dir=model_args.cache_dir,
-        token=model_args.token,
-    )
+    # step2 加载数据集, 先按照这个链接下载：https://zhuanlan.zhihu.com/p/685765714
+    ds = load_dataset(path = data_args.train_dir)
     # step2.1 对训练数据进行切分
-    data_args.train_val_split = None if "validation" in ds.keys() else data_args.train_val_split
-    if isinstance(data_args.train_val_split, float) and data_args.train_val_split > 0.0:
-        split = ds["train"].train_test_split(data_args.train_val_split)
-        ds["train"] = split["train"]
-        ds["validation"] = split["test"]
+    # data_args.train_val_split = None if "validation" in ds.keys() else data_args.train_val_split
+    # if isinstance(data_args.train_val_split, float) and data_args.train_val_split > 0.0:
+    #     split = ds["train"].train_test_split(data_args.train_val_split)
+    #     ds["train"] = split["train"]
+    #     ds["validation"] = split["test"]
+    ds["validation"] = ds['test']
 
     # step3 模型配置加载
     config_kwargs = {
