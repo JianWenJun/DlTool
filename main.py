@@ -13,11 +13,11 @@ import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-
 # Automatic Weights & Biases logging enabled, to disable set 如下为true, 否则注销
 # os.environ["WANDB_DISABLED"] = "true"
 # os.environ["WANDB_WATCH"] = "false" # 具体看 WandbCallback 参数说明，梯度查看
-# os.environ["WANDB_PROJECT"] = "false" # 设置名称
+os.environ["WANDB_PROJECT"] = "DLTool"  # 设置名称
+
 
 def do_mae_pretraining():
     """
@@ -46,7 +46,7 @@ def do_mae_pretraining():
         "logging_steps": 10,
         "log_on_each_node": False,
         "disable_tqdm": False,
-        "report_to": "wandb",
+        "report_to": "none",
         # 训练- 评测
         "evaluation_strategy": "steps",  # steps, epoch
         "eval_steps": 100,
@@ -102,15 +102,15 @@ def do_langauge_pretraining():
         "do_train": True,
         "do_eval": True,
         "num_train_epochs": 800,
-        "per_device_train_batch_size": 8,
-        "per_device_eval_batch_size": 8,
+        "per_device_train_batch_size": 2,
+        "per_device_eval_batch_size": 2,
         # "load_best_model_at_end": True,
         # 训练-日志
         "logging_strategy": "steps",
         "logging_steps": 10,
         "log_on_each_node": False,
         "disable_tqdm": False,
-        "report_to": "wandb",
+        "report_to": "wandb",  # none, wandb
         # 训练- 评测
         "evaluation_strategy": "steps",  # steps, epoch
         "eval_steps": 100,
@@ -128,13 +128,14 @@ def do_langauge_pretraining():
         "local_rank": -1,
         "ddp_find_unused_parameters": None,  # ddp设置True
         # 模型 -
+        "torch_dtype": "auto",
         "model_name_or_path": None,  # 随机初始化
         "config_name": "/root/models/gpt2-medium",  # 不带模型文件的地址
         "tokenizer_name": "/root/models/gpt2-medium",
         "cache_dir": "./data/process/wikitext2",
         # 数据 -
-        "train_dir": "/Users/jianwenjun/wikitext/wikitext-2-raw-v1",
-        # "remove_unused_columns": False,  # 自定义DataCollate为False
+        "train_file": "./data/process/wikitext/wikitext-2-raw-v1",
+        "remove_unused_columns": False,  # 自定义DataCollate为False
         "dataloader_num_workers": 4,
         "preprocessing_num_workers": 4
     }
@@ -149,4 +150,7 @@ def do_langauge_pretraining():
 
 if __name__ == '__main__':
     # 运行mae预训练任务
-    do_mae_pretraining()
+    # do_mae_pretraining()
+
+    # 运行gpt2 CLM 预训练任务
+    do_langauge_pretraining()

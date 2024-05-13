@@ -212,15 +212,15 @@ class DataTrainingArguments:
         if self.streaming:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
 
-        if self.dataset_name is None and self.train_file is None and self.validation_file is None:
-            raise ValueError("Need either a dataset name or a training/validation file.")
-        else:
-            if self.train_file is not None:
-                extension = self.train_file.split(".")[-1]
-                assert extension in ["csv", "json", "txt"], "`train_file` should be a csv, a json or a txt file."
-            if self.validation_file is not None:
-                extension = self.validation_file.split(".")[-1]
-                assert extension in ["csv", "json", "txt"], "`validation_file` should be a csv, a json or a txt file."
+        # if self.dataset_name is None and self.train_file is None and self.validation_file is None:
+        #     raise ValueError("Need either a dataset name or a training/validation file.")
+        # else:
+        #     if self.train_file is not None:
+        #         extension = self.train_file.split(".")[-1]
+        #         assert extension in ["csv", "json", "txt"], "`train_file` should be a csv, a json or a txt file."
+        #     if self.validation_file is not None:
+        #         extension = self.validation_file.split(".")[-1]
+        #         assert extension in ["csv", "json", "txt"], "`validation_file` should be a csv, a json or a txt file."
 
 
 class EvalCallBack(object):
@@ -229,7 +229,8 @@ class EvalCallBack(object):
     """
 
     def __init__(self, cache_dir):
-        self.metric = evaluate.load("accuracy", cache_dir=cache_dir)
+        # self.metric = evaluate.load("accuracy", cache_dir=cache_dir)
+        self.metric = evaluate.load("./core/trainer/metrics/accuracy.py")
 
     def __call__(self, eval_prediction: EvalPrediction):
         preds, labels = eval_prediction
@@ -260,13 +261,13 @@ def do_text_token_group_text(tokenizer, text_column_name, column_names, block_si
     def tokenize_function(examples):
         with CaptureLogger(tok_logger) as cl:
             output = tokenizer(examples[text_column_name])
-        # clm input could be much much longer than block_size
-        if "Token indices sequence length is longer than the" in cl.out:
-            tok_logger.warning(
-                "^^^^^^^^^^^^^^^^ Please ignore the warning above - this long input will be chunked into smaller bits"
-                " before being passed to the model."
-            )
-        return output
+            # clm input could be much much longer than block_size
+            if "Token indices sequence length is longer than the" in cl.out:
+                tok_logger.warning(
+                    "^^^^^^^^^^^^^^^^ Please ignore the warning above - this long input will be chunked into smaller bits"
+                    " before being passed to the model."
+                )
+            return output
 
     # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
     def group_texts(examples):
@@ -396,7 +397,7 @@ def run_language_pretraining(model_args: ModelArguments, data_args: DataTraining
     if training_args.do_train:
         column_names = list(ds["train"].features)
     else:
-        column_names = list(ds["validation"].features)
+        column_names = list(ds["test"].features)
     text_column_name = "text" if "text" in column_names else column_names[0]
     # step3.1 计算block_size
     if hasattr(config, "max_position_embeddings"):
@@ -424,12 +425,14 @@ def run_language_pretraining(model_args: ModelArguments, data_args: DataTraining
             )
         block_size = min(data_args.block_size, tokenizer.model_max_length)
     # step3.2 处理数据
+    logger.info("start load lm_dataset...")
     lm_dataset = do_text_token_group_text(
         tokenizer=tokenizer, text_column_name=text_column_name, column_names=column_names, block_size=block_size,
         raw_datasets=ds,
         training_args=training_args, data_args=data_args
     )
     # step4 模型加载
+    logger.info("start load model...")
     if model_args.model_name_or_path:
         torch_dtype = (
             model_args.torch_dtype
@@ -462,13 +465,12 @@ def run_language_pretraining(model_args: ModelArguments, data_args: DataTraining
         # Data collator will default to DataCollatorWithPadding, so we change it.
         data_collator=default_data_collator,
         compute_metrics=EvalCallBack(cache_dir=model_args.cache_dir) if training_args.do_eval else None,
-        preprocess_logits_for_metrics=preprocess_logits_for_metrics
-        if training_args.do_eval
-        else None,
+        preprocess_logits_for_metrics=preprocess_logits_for_metrics if training_args.do_eval else None,
         callbacks=callbacks
     )
     # step5.1 开始训练
     if training_args.do_train:
+        logger.info("*** Training ***")
         checkpoint = None
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
@@ -489,7 +491,6 @@ def run_language_pretraining(model_args: ModelArguments, data_args: DataTraining
     # Evaluation
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
-
         metrics = trainer.evaluate()
 
         max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(
