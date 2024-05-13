@@ -25,9 +25,9 @@ def do_mae_pretraining():
     :return:
     """
     # step1 导入包
-    from task.image_pt.run_mae_handler import run_mae_pretraining, get_run_args, run_pipline
+    from task.image_basic.run_mae_handler import run_mae_pretraining, get_run_args, run_pipline
     # step1.1 参数类别用于查询进行相应配置
-    from task.image_pt.run_mae_handler import CustomTrainingArguments, ModelArguments, DataTrainingArguments, \
+    from task.image_basic.run_mae_handler import CustomTrainingArguments, ModelArguments, DataTrainingArguments, \
         TrainingArguments
     # step2 参数设置
     args = {
@@ -90,9 +90,9 @@ def do_langauge_pretraining():
     :return:
     """
     # step1 导入包
-    from task.nlp_basic_ft.run_pretraing_handler import run_language_pretraining, get_run_args
+    from task.nlp_basic.run_pretraing_handler import run_language_pretraining, get_run_args
     # step1.1 参数类别用于查询进行相应配置
-    from task.nlp_basic_ft.run_pretraing_handler import ModelArguments, DataTrainingArguments, TrainingArguments
+    from task.nlp_basic.run_pretraing_handler import ModelArguments, DataTrainingArguments, TrainingArguments
     # step2 参数设置
     args = {
         # 训练-基础参数
