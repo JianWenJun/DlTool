@@ -148,9 +148,83 @@ def do_langauge_pretraining():
                              callbacks=callbacks)
 
 
+def do_audio_speech_recon_seq2seq():
+    """
+        语音识别任务
+    :return:
+    """
+    # step1 导入包
+    from task.nlp_basic.run_pretraing_handler import run_language_pretraining, get_run_args
+    # step1.1 参数类别用于查询进行相应配置
+    from task.nlp_basic.run_pretraing_handler import ModelArguments, DataTrainingArguments, TrainingArguments
+    # step2 参数设置
+    args = {
+        # 训练-基础参数
+        "seed": 1337,
+        "output_dir": './result/common_voice_11',
+        "overwrite_output_dir": True,
+        "do_train": True,
+        "do_eval": True,
+        "num_train_epochs": 800,
+        "per_device_train_batch_size": 16,
+        "per_device_eval_batch_size": 16,
+        # "load_best_model_at_end": True,
+        # 训练-日志
+        "logging_strategy": "steps",
+        "logging_steps": 25,
+        "log_on_each_node": False,
+        "disable_tqdm": False,
+        "report_to": "wandb",  # none, wandb
+        # 训练- 评测
+        "evaluation_strategy": "steps",  # steps, epoch
+        "eval_steps": 100,
+        "eval_delay": 1,
+        # 训练-保存
+        "save_strategy": "epoch",
+        "save_total_limit": 3,
+        "save_on_each_node": False,
+        # 训练-优化学习 - 默认adamW
+        "gradient_accumulation_steps": 2,
+        "lr_scheduler_type": "cosine",
+        "learning_rate": 1e-5,
+        "weight_decay": 0.05,
+        "warmup_steps": '500',
+        "gradient_checkpointing": True,
+        "fp": True,
+        # 训练-分布式
+        "local_rank": -1,
+        "ddp_find_unused_parameters": None,  # ddp设置True
+        # 模型 -
+        "torch_dtype": "auto",
+        "model_name_or_path": None,  # 随机初始化
+        "cache_dir": "./data/process/common_voice_11",
+        "freeze_feature_encoder": False,
+        # 数据 -
+        "train_file": "./data/process/common_voice_11/xxx",
+        "remove_unused_columns": False,  # 自定义DataCollate为False
+        "generation_max_length": 225,
+        "dataloader_num_workers": 0,
+        "preprocessing_num_workers": 16,
+        "max_duration_in_seconds": 30,
+        "text_column_name": "sentence",
+        "predict_with_generate": True
+
+    }
+    # step2.1 解析参数
+    model_args, data_args, trainings_args = get_run_args(args=args)
+    # step3 设置训练过程中的回调
+    callbacks = []
+    # step4 运行trainer
+    run_language_pretraining(model_args=model_args, data_args=data_args, training_args=trainings_args,
+                             callbacks=callbacks)
+
+
 if __name__ == '__main__':
     # 运行mae预训练任务
     # do_mae_pretraining()
 
     # 运行gpt2 CLM 预训练任务
-    do_langauge_pretraining()
+    # do_langauge_pretraining()
+
+    # 运行audio seq2seq预训练任务
+    do_audio_speech_recon_seq2seq()
